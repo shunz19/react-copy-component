@@ -1,0 +1,31 @@
+{
+  "name": "react-copy-component",
+  "version": "1.0.0",
+  "description": "Copy a react component from one project to another",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "bin": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shunz19/react-copy-component.git"
+  },
+  "keywords": [
+    "copy",
+    "react",
+    "component",
+    "reuse"
+  ],
+  "author": "shunz19",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shunz19/react-copy-component/issues"
+  },
+  "homepage": "https://github.com/shunz19/react-copy-component#readme",
+  "devDependencies": {
+    "@babel/preset-react": "^7.23.3",
+    "find-imports": "^1.1.0"
+  }
+}
