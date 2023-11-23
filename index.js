@@ -1,43 +1,47 @@
 #!/usr/bin/env node
+import child_process from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import precinct from 'precinct';
 
 const currentPath = process.cwd();
 
-console.log(process.cwd());
-
 const installAll = process.argv.includes('--install-all');
+const dryRun = process.argv.includes('--dry-run');
 
-const firstArgument = process.argv[2];
-const secondArgument = process.argv[3];
+const firstArgument = process.argv.filter(_ => !_.startsWith('-'))[2];
+const secondArgument = process.argv.filter(_ => !_.startsWith('-'))[3];
 
 const firstPath = path.resolve(currentPath, firstArgument).replace(/\\/g, '/');
 const firstPathDir = path.dirname(firstPath).replace(/\\/g, '/');
 const secondPath = (secondArgument ? path.resolve(currentPath, secondArgument) : currentPath).replace(/\\/g, '/');
 
-let firstProjectRoot;
-
-const firstPaths = firstPathDir.split('/');
-
-for (let i = firstPaths.length - 1; i >= 0; i--) {
-    firstProjectRoot = firstPaths.slice(0, i).join('/') + '/';
-    if (fs.existsSync(firstProjectRoot + 'package.json')) {
-        break;
-    }
-
-    if (i == 0) {
-        firstProjectRoot = currentPath;
+function findRoot(path) {
+    const paths = path.split('/');
+    for (let i = paths.length; i >= 0; i--) {
+        const currentPath = paths.slice(0, i).join('/') + '/';
+        if (fs.existsSync(currentPath + 'package.json')) {
+            return currentPath;
+        }
     }
 }
 
-const packageJson = JSON.parse(fs.readFileSync(firstProjectRoot + 'package.json', 'utf8'));
+const firstProjectRoot = findRoot(firstPathDir);
 
-// const packageImports = findImports(firstPath, {
-//     absoluteImports: false,
-//     relativeImports: false,
-//     packageImports: true
-// });
+if (!firstProjectRoot) {
+    console.log("Could not find root of first project");
+    process.exit(1);
+}
+
+const secondProjectRoot = findRoot(secondPath);
+
+if (!secondProjectRoot && installAll) {
+    console.log("Could not find root of second project");
+    process.exit(1);
+}
+
+const firstPackageJSON = JSON.parse(fs.readFileSync(path.resolve(firstProjectRoot, 'package.json'), 'utf8'));
+const secondPackageJSON = installAll ? JSON.parse(fs.readFileSync(path.resolve(secondProjectRoot, 'package.json'), 'utf8')) : {};
 
 const fileExtensions = ['.js', '.jsx', '.json', '.ts', '.tsx'];
 
@@ -69,7 +73,7 @@ function recurseFindImports(pathFile, relativeImports = [], packageImports = [],
 
     if (!recursed) return {
         relativeImports: relativeImports.filter((_, i) => relativeImports.indexOf(_) === i),
-        packageImports: packageImports.filter((_, i) => packageImports.indexOf(_) === i)
+        packageImports: packageImports.map(_ => _.split('/').slice(0, 2).join('/')).filter((_, i) => packageImports.indexOf(_) === i)
     };
 }
 
@@ -86,10 +90,27 @@ imports.relativeImports.forEach(_ => {
     }
 
     if (!fs.existsSync(path.dirname(fileDestination))) {
-        fs.mkdirSync(path.dirname(fileDestination), { recursive: true });
+        if (!dryRun) fs.mkdirSync(path.dirname(fileDestination), { recursive: true });
     }
 
-    fs.copyFileSync(_, fileDestination);
+    if (!dryRun) fs.copyFileSync(_, fileDestination);
 });
 
-console.log("Required Packages:", imports.packageImports);
+
+const required = imports.packageImports
+
+console.log("Required Packages:", required);
+if (installAll) {
+    // remove conflicting packages
+    Object.keys(secondPackageJSON.dependencies).forEach(_ => {
+        if (required.includes(_)) {
+            required.splice(required.indexOf(_), 1);
+        }
+    });
+
+    const command = `npm install ${required.join(' ')}`;
+    console.log("Running", command);
+    if (!dryRun) {
+        child_process.execSync(command, { cwd: secondProjectRoot, stdio: 'inherit' });
+    }
+}
