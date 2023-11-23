@@ -2,7 +2,7 @@
 Copy a script file and its imported scripts from one project to another.
 
 # Usage
-```npx copy-script <Script-Path> [<Destination>]```
+```npx react-copy-component <Script-Path> [<Destination>]```
 
 # Options
 
