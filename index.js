@@ -43,14 +43,15 @@ if (!secondProjectRoot && installAll) {
 const firstPackageJSON = JSON.parse(fs.readFileSync(path.resolve(firstProjectRoot, 'package.json'), 'utf8'));
 const secondPackageJSON = installAll ? JSON.parse(fs.readFileSync(path.resolve(secondProjectRoot, 'package.json'), 'utf8')) : {};
 
-const fileExtensions = ['.js', '.jsx', '.json', '.ts', '.tsx'];
+const fileExtensions = ['.js', '.jsx', '.json', '.ts', '.tsx']
+fileExtensions.push(...fileExtensions.map(_ => "/index" + _));
 
 function recurseFindImports(pathFile, relativeImports = [], packageImports = [], recursed = false) {
 
     let filePath = pathFile;
     let extensionsIndex = 0;
 
-    while (!fs.existsSync(filePath) && extensionsIndex < fileExtensions.length) {
+    while (!(fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) && extensionsIndex < fileExtensions.length) {
         filePath = pathFile + fileExtensions[extensionsIndex];
         extensionsIndex++;
     }
@@ -99,14 +100,15 @@ imports.relativeImports.forEach(_ => {
 
 const required = imports.packageImports
 
+// remove conflicting packages
+Object.keys(secondPackageJSON.dependencies).forEach(_ => {
+    if (required.includes(_)) {
+        required.splice(required.indexOf(_), 1);
+    }
+});
+
 console.log("Required Packages:", required);
-if (installAll) {
-    // remove conflicting packages
-    Object.keys(secondPackageJSON.dependencies).forEach(_ => {
-        if (required.includes(_)) {
-            required.splice(required.indexOf(_), 1);
-        }
-    });
+if (installAll && required.length > 0) {
 
     const command = `npm install ${required.join(' ')}`;
     console.log("Running", command);

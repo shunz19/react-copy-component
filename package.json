@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/shunz19/react-copy-component#readme",
   "dependencies": {
-    "@babel/preset-react": "^7.23.3",
     "precinct": "^11.0.5"
   }
 }
