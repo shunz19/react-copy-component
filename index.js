@@ -1,8 +1,12 @@
-import findImports from 'find-imports';
+#!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
+import precinct from 'precinct';
 
 const currentPath = process.cwd();
+
+console.log(process.cwd());
+
 const installAll = process.argv.includes('--install-all');
 
 const firstArgument = process.argv[2];
@@ -27,6 +31,8 @@ for (let i = firstPaths.length - 1; i >= 0; i--) {
     }
 }
 
+const packageJson = JSON.parse(fs.readFileSync(firstProjectRoot + 'package.json', 'utf8'));
+
 // const packageImports = findImports(firstPath, {
 //     absoluteImports: false,
 //     relativeImports: false,
@@ -50,22 +56,15 @@ function recurseFindImports(pathFile, relativeImports = [], packageImports = [],
         return;
     }
 
-    const imports = findImports(filePath, {
-        absoluteImports: true,
-        relativeImports: true,
-        packageImports: true
-    });
-
+    const imports = precinct.paperwork(filePath);
     relativeImports.push(filePath);
 
-    Object.keys(imports).forEach(_ => {
-        imports[_].forEach(_ => {
-            if (_.startsWith('.')) {
-                recurseFindImports(path.resolve(path.dirname(filePath), _).replace(/\\/g, '/'), relativeImports, packageImports, true);
-            } else {
-                packageImports.push(_);
-            }
-        });
+    imports.forEach(_ => {
+        if (_.startsWith('.')) {
+            recurseFindImports(path.resolve(path.dirname(filePath), _).replace(/\\/g, '/'), relativeImports, packageImports, true);
+        } else {
+            packageImports.push(_);
+        }
     });
 
     if (!recursed) return {
@@ -89,7 +88,7 @@ imports.relativeImports.forEach(_ => {
         fs.mkdirSync(path.dirname(fileDestination), { recursive: true });
     }
 
-    fs.copyFileSync(_, fileDestination);
+    //fs.copyFileSync(_, fileDestination);
     console.log("Copied", _, "to", fileDestination);
 });
 
