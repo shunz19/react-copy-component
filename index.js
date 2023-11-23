@@ -78,6 +78,7 @@ const imports = recurseFindImports(firstPath);
 imports.relativeImports.forEach(_ => {
 
     const fileDestination = path.resolve(secondPath, _.replace(firstProjectRoot, '')).replace(/\\/g, '/');
+    console.log("Copying", _, "to", fileDestination);
 
     if (fs.existsSync(fileDestination)) {
         console.log("File already exists", fileDestination);
@@ -88,8 +89,7 @@ imports.relativeImports.forEach(_ => {
         fs.mkdirSync(path.dirname(fileDestination), { recursive: true });
     }
 
-    //fs.copyFileSync(_, fileDestination);
-    console.log("Copied", _, "to", fileDestination);
+    fs.copyFileSync(_, fileDestination);
 });
 
 console.log("Required Packages:", imports.packageImports);
