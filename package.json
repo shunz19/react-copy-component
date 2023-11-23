@@ -1,6 +1,6 @@
 {
   "name": "react-copy-component",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Copy a react component from one project to another",
   "main": "index.js",
   "scripts": {
